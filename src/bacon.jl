@@ -161,6 +161,39 @@ function bacon_regression_initial_subset(
     return basic_subset
 end
 
+
+
+"""
+        bacon(setting, m, method, alpha)
+Run the BACON algorithm to detect outliers on regression data.
+
+# Arguments:
+ - `setting`: RegressionSetting object with a formula and a dataset.
+ - `m`: The number of elements to be included in the initial subset.
+ - `method`: The distance method to use for selecting the points for initial subset
+ - `alpha`: The quantile used for cutoff
+
+# Description 
+BACON (Blocked Adaptive Computationally efficient Outlier Nominators) algoritm, defined in the citation below,
+has many versions, e.g BACON for multivariate data, BACON for regression etc. Since the design matrix of a
+regression model is multivariate data, BACON for multivariate data is performed in early stages of the algorithm.
+After selecting a clean subset of observations, then a forward search is applied. Observations with high
+studendized residuals are reported as outliers.
+
+# Output 
+- `["outliers"]`: Array of indices of outliers.
+
+# Examples
+```julia-repl
+julia> reg = createRegressionSetting(@formula(stackloss ~ airflow + watertemp + acidcond), stackloss)
+julia> bacon(reg, m=12)
+Dict{String,Array{Int64,1}} with 1 entry:
+  "outliers" => [1, 3, 4, 21]
+```
+# References
+Billor, Nedret, Ali S. Hadi, and Paul F. Velleman. "BACON: blocked adaptive computationally efficient outlier nominators."
+Computational statistics & data analysis 34.3 (2000): 279-298.
+"""
 function bacon(
         X::Array{Float64,2},
         y::Array{Float64};
@@ -180,34 +213,12 @@ function bacon(
         r_prev = r
         r = length(subset)
     end
-    return setdiff(1:n, subset)
+    result = Dict(
+        "outliers" => setdiff(1:n, subset)
+    )
+    return result
 end
 
-"""
-        bacon(setting, m, method, alpha)
-Run the BACON algorithm to detect outliers on regression data.
-
-# Arguments:
- - `setting`: RegressionSetting object with a formula and a dataset.
- - `m`: The number of elements to be included in the initial subset.
- - `method`: The distance method to use for selecting the points for initial subset
- - `alpha`: The quantile used for cutoff
-
-# Examples
-```julia-repl
-julia> reg = createRegressionSetting(@formula(stackloss ~ airflow + watertemp + acidcond), stackloss)
-julia> bacon_multivariate_outlier_detection(reg, m=12)
-4-element Array{Int64,1}:
-  1
-  3
-  4
- 21
-
-```
-# References
-Billor, Nedret, Ali S. Hadi, and Paul F. Velleman. "BACON: blocked adaptive computationally efficient outlier nominators."
-Computational statistics & data analysis 34.3 (2000): 279-298.
-"""
 function bacon(setting::RegressionSetting; m::Int, method::String="mahalanobis", alpha=0.025)
     X, y = @extractRegressionSetting setting
     return bacon(X, y, m=m, method=method, alpha=alpha)

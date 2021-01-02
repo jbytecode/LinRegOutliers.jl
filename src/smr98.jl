@@ -28,21 +28,23 @@ Perform the Sebert, Monthomery and Rollier (1998) algorithm for the given regres
 # Arguments
 - `setting::RegressionSetting`: RegressionSetting object with a formula and dataset.
 
+# Description 
+The algorithm starts with an ordinary least squares 
+estimation for a given model and data. Residuals and fitted responses are calculated 
+using the estimated model. A hierarchical clustering analysis is applied using standardized
+residuals and standardized fitted responses. The tree structure of clusters are cut using
+a threshold, e.g Majona criterion, as suggested by the authors. It is expected that 
+the subtrees with relatively small number of observations are declared to be clusters of outliers.
+
+# Output
+- `["outliers"]`: Array of indices of outliers.
+
 # Examples
 ```julia-repl
 julia> reg0001 = createRegressionSetting(@formula(calls ~ year), phones);
 julia> smr98(reg0001)
-10-element Array{Int64,1}:
- 15
- 16
- 17
- 18
- 19
- 20
- 21
- 22
- 23
- 24
+Dict{String,Array{Int64,1}} with 1 entry:
+  "outliers" => [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
 ```
 
 # References
@@ -87,9 +89,9 @@ function smr98(X::Array{Float64,2}, y::Array{Float64,1})
     for clustid in uniquemappings
         cnt = count(x -> x == clustid, clustermappings)
         if cnt >= h 
-            return filter(i -> clustermappings[i] != clustid, 1:n)
+            return Dict("outliers" => filter(i -> clustermappings[i] != clustid, 1:n))
         end
     end
-    return []
+    return Dict("outliers" => [])
 end
 
